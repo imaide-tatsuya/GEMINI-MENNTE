@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>車両メンテナンス作業依頼一覧</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 15px; background-color: #f4f4f4; color: #333; }
+        h1 { text-align: center; color: #333; font-size: 1.5em; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 0.9em; }
+        th { background-color: #e9e9e9; font-weight: bold; }
+        .request-id a { color: #007bff; text-decoration: none; font-weight: bold; }
+        .request-id a:hover { text-decoration: underline; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        /* スマホ表示を考慮したスタイル */
+        @media screen and (max-width: 768px) {
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            tr { border: 1px solid #ccc; margin-bottom: 10px;}
+            td {
+                border: none;
+                border-bottom: 1px solid #eee;
+                position: relative;
+                padding-left: 45%; /* ラベル表示領域 */
+                padding-top: 8px;
+                padding-bottom: 8px;
+                text-align: right; /* 値を右寄せ */
+                min-height: 24px; /* 高さを確保 */
+            }
+            td:before {
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                left: 8px;
+                width: 40%; /* ラベルの幅 */
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+            }
+            td:nth-of-type(1):before { content: "依頼ID"; }
+            td:nth-of-type(2):before { content: "依頼日"; }
+            td:nth-of-type(3):before { content: "納期"; }
+            td:nth-of-type(4):before { content: "初期メンテ"; }
+            td:nth-of-type(5):before { content: "写真撮影"; }
+            td:nth-of-type(6):before { content: "社内管理No"; }
+            td:nth-of-type(7):before { content: "車両移動先"; }
+            td:nth-of-type(8):before { content: "その他"; }
+            .request-id { font-weight: bold; }
+        }
+    </style>
+</head>
+<body>
+    <h1>車両メンテナンス作業依頼一覧</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>依頼ID(車台番号)</th>
+                <th>依頼日</th>
+                <th>納期</th>
+                <th>初期メンテ</th>
+                <th>写真撮影</th>
+                <th>社内管理No貼付</th>
+                <th>車両移動先</th>
+                <th>その他</th>
+            </tr>
+        </thead>
+        <tbody id="request-list">
+            <tr>
+                <td class="request-id"><a href="check.html?jobId=AB001&dueDate=2025/05/16">AB001</a></td>
+                <td>2025/05/13</td>
+                <td>2025/05/16</td>
+                <td>〇</td>
+                <td>〇</td>
+                <td>〇</td>
+                <td>そら P</td>
+                <td>テスト</td>
+            </tr>
+            <tr>
+                <td class="request-id"><a href="check.html?jobId=AB002&dueDate=2025/05/17">AB002</a></td>
+                <td>2025/05/14</td>
+                <td>2025/05/17</td>
+                <td>〇</td>
+                <td>〇</td>
+                <td>〇</td>
+                <td>そら P</td>
+                <td>テスト</td>
+            </tr>
+            <tr>
+                <td class="request-id"><a href="check.html?jobId=AB003&dueDate=2025/05/18">AB003</a></td>
+                <td>2025/05/15</td>
+                <td>2025/05/18</td>
+                <td>〇</td>
+                <td>〇</td>
+                <td>×</td>
+                <td>そら P</td>
+                <td>テスト</td>
+            </tr>
+            <tr>
+                <td class="request-id"><a href="check.html?jobId=AB004&dueDate=2025/05/19">AB004</a></td>
+                <td>2025/05/16</td>
+                <td>2025/05/19</td>
+                <td>〇</td>
+                <td>×</td>
+                <td>×</td>
+                <td>そら P</td>
+                <td>テスト</td>
+            </tr>
+        </tbody>
+    </table>
+    <script>
+        // このスクリプトブロックに、Google Apps Scriptなどを使用して
+        // スプレッドシート (gid=0) からデータを取得し、
+        // 上記の tbody#request-list に行を動的に追加する処理を記述します。
+        // 例:
+        // async function fetchRequests() {
+        //     const spreadSheetUrl = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_FOR_GETTING_REQUESTS';
+        //     try {
+        //         const response = await fetch(spreadSheetUrl);
+        //         const data = await response.json(); // 例: [{id: "AB001", requestDate: "2025/05/13", ...}, ...]
+        //         const tbody = document.getElementById('request-list');
+        //         tbody.innerHTML = ''; // 既存の行をクリア
+        //         data.forEach(item => {
+        //             const tr = document.createElement('tr');
+        //             // 納期(dueDate)もクエリパラメータで渡すようにする
+        //             tr.innerHTML = `
+        //                 <td class="request-id"><a href="check.html?jobId=${item.id}&dueDate=${item.dueDate}">${item.id}</a></td>
+        //                 <td>${item.requestDate}</td>
+        //                 <td>${item.dueDate}</td>
+        //                 <td>${item.initialMaintenance}</td>
+        //                 <td>${item.photoShooting}</td>
+        //                 <td>${item.internalMgmtNo}</td>
+        //                 <td>${item.vehicleLocation}</td>
+        //                 <td>${item.other}</td>
+        //             `;
+        //             tbody.appendChild(tr);
+        //         });
+        //     } catch (error) {
+        //         console.error('Error fetching requests:', error);
+        //         tbody.innerHTML = '<tr><td colspan="8">データの読み込みに失敗しました。</td></tr>';
+        //     }
+        // }
+        // window.onload = fetchRequests;
+        // ※ 上記JavaScriptは実際の動作にはGoogle Apps Script側の実装が必要です。
+    </script>
+</body>
+</html>

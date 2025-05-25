@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>車両初期メンテナンス作業管理</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .container { max-width: 800px; margin: 20px auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; font-size: 1.5em; margin-bottom: 20px; }
+        .field { margin-bottom: 18px; }
+        .field label { display: block; margin-bottom: 6px; font-weight: bold; color: #555; font-size: 0.9em; }
+        .field input[type="text"],
+        .field select,
+        .field textarea {
+            width: 100%; /* 親要素いっぱいに広げる */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* paddingとborderをwidthに含める */
+            font-size: 1em;
+        }
+        .field input[type="checkbox"] { margin-right: 5px; vertical-align: middle; }
+        .field textarea { resize: vertical; min-height: 60px; }
+        .field input[readonly] { background-color: #e9e9e9; cursor: not-allowed; }
+        .checkbox-group label { font-weight: normal; margin-right: 15px; font-size: 0.9em; }
+        .checkbox-group input[type="checkbox"] { width: auto; } /* チェックボックスの幅を自動に */
+
+        .button-container { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+        .button-container button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 0 10px;
+            transition: background-color 0.3s ease;
+        }
+        #confirmButton { background-color: #28a745; color: white; }
+        #confirmButton:hover { background-color: #218838; }
+
+        /* Modal styles */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background-color: #fff; margin: auto; padding: 25px; border-radius: 8px;
+            width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-height: 80vh; overflow-y: auto; /* 内容が多い場合にスクロール */
+        }
+        .modal-content h2 { text-align: center; margin-top: 0; margin-bottom: 20px; font-size: 1.3em; color: #333;}
+        .modal-content ul { list-style-type: none; padding: 0; margin:0; }
+        .modal-content ul li { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.95em;}
+        .modal-content ul li:last-child { border-bottom: none; }
+        .modal-content ul li strong { color: #555; }
+        .modal-buttons { text-align: center; margin-top: 25px; }
+        .modal-buttons button { padding: 10px 20px; margin: 0 8px; font-size: 0.95em;}
+        #submitButton { background-color: #007bff; color: white; }
+        #submitButton:hover { background-color: #0056b3; }
+        #editButton { background-color: #ffc107; color: #333; }
+        #editButton:hover { background-color: #e0a800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>車両初期メンテナンス作業管理</h1>
+        <form id="maintenanceForm">
+            <input type="hidden" name="dueDate" id="dueDate">
+
+            <div class="field">
+                <label for="workerName">作業者名</label>
+                <input type="text" name="workerName" id="workerName" readonly />
+            </div>
+            <div class="field">
+                <label for="jobId">依頼ID</label>
+                <input type="text" name="jobId" id="jobId" required readonly />
+            </div>
+            <div class="field">
+                <label for="photo">車両写真撮影</label>
+                <select name="photo" id="photo"><option value="">選択</option><option value="済">済</option><option value="不要">不要</option></select>
+            </div>
+            <div class="field">
+                <label for="battery">バッテリー</label>
+                <select name="battery" id="battery"><option value="">選択</option><option value="交換済">交換済</option><option value="流用">流用</option></select>
+            </div>
+            <div class="field">
+                <label for="oil">オイル交換</label>
+                <select name="oil" id="oil"><option value="">選択</option><option value="済">済</option><option value="流用">流用</option><option value="不要">不要</option></select>
+            </div>
+            <div class="field">
+                <label for="element">エレメント交換</label>
+                <select name="element" id="element"><option value="">選択</option><option value="済">済</option><option value="流用">流用</option><option value="不要">不要</option></select>
+            </div>
+            <div class="field">
+                <label for="oilSeal">オイル交換時期シール貼付け</label>
+                <select name="oilSeal" id="oilSeal"><option value="">選択</option><option value="未">未</option><option value="済">済</option><option value="不要">不要</option></select>
+            </div>
+            <div class="field">
+                <label for="washer">ウォッシャー液</label>
+                <select name="washer" id="washer"><option value="">選択</option><option value="補充済">補充済</option></select>
+            </div>
+            <div class="field">
+                <label for="coolant">クーラント補充</label>
+                <select name="coolant" id="coolant"><option value="">選択</option><option value="補充済">補充済</option></select>
+            </div>
+            <div class="field">
+                <label for="doorCheck">ドア開閉確認</label>
+                <select name="doorCheck" id="doorCheck"><option value="">選択</option><option value="問題無">問題無</option><option value="問題有">問題有</option></select>
+            </div>
+            <div class="field">
+                <label for="jackSet">車載ジャッキSET</label>
+                <select name="jackSet" id="jackSet"><option value="">選択</option><option value="問題無">問題無</option><option value="欠品有">欠品有</option></select>
+            </div>
+            <div class="field checkbox-group">
+                <label>ジャッキ欠品項目（該当時のみ）</label>
+                <div>
+                    <label><input type="checkbox" name="jack_item_jack" id="jack_item_jack" value="ジャッキ"> ジャッキ</label>
+                    <label><input type="checkbox" name="jack_item_handle" id="jack_item_handle" value="ハンドル"> ハンドル</label>
+                    <label><input type="checkbox" name="jack_item_wrench" id="jack_item_wrench" value="レンチ"> レンチ</label>
+                </div>
+            </div>
+            <div class="field">
+                <label for="wiperFront">ワイパー（運転席）</label>
+                <select name="wiperFront" id="wiperFront"><option value="">選択</option><option value="交換済">交換済</option><option value="流用">流用</option><option value="不要">不要</option></select>
+            </div>
+            <div class="field">
+                <label for="wiperPassenger">ワイパー（助手席）</label>
+                <select name="wiperPassenger" id="wiperPassenger"><option value="">選択</option><option value="交換済">交換済</option><option value="流用">流用</option><option value="不要">不要</option></select>
+            </div>
+            <div class="field">
+                <label for="wiperRear">リヤワイパー</label>
+                <select name="wiperRear" id="wiperRear"><option value="">選択</option><option value="交換済">交換済</option><option value="流用">流用</option><option value="不要">不要</option></select>
+            </div>
+            <div class="field">
+                <label for="tire">タイヤ交換本数</label>
+                <select name="tire" id="tire"><option value="">選択</option><option value="0本">0本</option><option value="1本">1本</option><option value="2本">2本</option><option value="3本">3本</option><option value="4本">4本</option><option value="流用">流用</option></select>
+            </div>
+            <div class="field">
+                <label for="air">タイヤ空気圧</label>
+                <select name="air" id="air"><option value="">選択</option><option value="済">済</option></select>
+            </div>
+            <div class="field">
+                <label for="cigarette">シガーソケット</label>
+                <select name="cigarette" id="cigarette"><option value="">選択</option><option value="問題無">問題無</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="ac">エアコン</label>
+                <select name="ac" id="ac"><option value="">選択</option><option value="問題無">問題無</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="headlamp">ヘッドランプ</label>
+                <select name="headlamp" id="headlamp"><option value="">選択</option><option value="問題無">問題無</option><option value="1個交換">1個交換</option><option value="2個交換">2個交換</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="position">ポジションランプ</label>
+                <select name="position" id="position"><option value="">選択</option><option value="問題無">問題無</option><option value="1個交換">1個交換</option><option value="2個交換">2個交換</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="indicatorFront">ウインカーランプ前</label>
+                <select name="indicatorFront" id="indicatorFront"><option value="">選択</option><option value="問題無">問題無</option><option value="1個交換">1個交換</option><option value="2個交換">2個交換</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="indicatorRear">ウインカーランプ後</label>
+                <select name="indicatorRear" id="indicatorRear"><option value="">選択</option><option value="問題無">問題無</option><option value="1個交換">1個交換</option><option value="2個交換">2個交換</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="roomlampFront">ルームランプ（前）</label>
+                <select name="roomlampFront" id="roomlampFront"><option value="">選択</option><option value="問題無">問題無</option><option value="1個交換">1個交換</option><option value="2個交換">2個交換</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="roomlampRear">ルームランプ（後）</label>
+                <select name="roomlampRear" id="roomlampRear"><option value="">選択</option><option value="問題無">問題無</option><option value="1個交換">1個交換</option><option value="2個交換">2個交換</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="tail">テールランプ</label>
+                <select name="tail" id="tail"><option value="">選択</option><option value="問題無">問題無</option><option value="交換">交換</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="back_lamp">バックランプ</label> <select name="back_lamp" id="back_lamp"><option value="">選択</option><option value="問題無">問題無</option><option value="交換">交換</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="number_light">ナンバー灯</label> <select name="number_light" id="number_light"><option value="">選択</option><option value="問題無">問題無</option><option value="交換">交換</option><option value="故障有">故障有</option></select>
+            </div>
+            <div class="field">
+                <label for="flare">発煙筒</label>
+                <select name="flare" id="flare"><option value="">選択</option><option value="問題無">問題無</option><option value="期限切れ">期限切れ</option></select>
+            </div>
+            <div class="field">
+                <label for="clean">車内簡易清掃</label>
+                <select name="clean" id="clean"><option value="">選択</option><option value="済">済</option><option value="不要">不要</option></select>
+            </div>
+            <div class="field">
+                <label for="photoDrive">車両写真ドライブ移行</label>
+                <select name="photoDrive" id="photoDrive"><option value="">選択</option><option value="済">済</option><option value="不要">不要</option></select>
+            </div>
+            <div class="field">
+                <label for="note">伝達事項</label>
+                <textarea name="note" id="note" rows="3" placeholder="例: 傷あり、補足事項など"></textarea>
+            </div>
+
+            <div class="button-container">
+                <button type="button" id="confirmButton">確認</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <h2>入力内容確認</h2>
+            <ul id="confirmationList">
+                </ul>
+            <div class="modal-buttons">
+                <button type="button" id="submitButton">送信</button>
+                <button type="button" id="editButton">修正</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const jobId = urlParams.get('jobId');
+            const dueDate = urlParams.get('dueDate'); // 納期を取得
+
+            if (jobId) {
+                document.getElementById('jobId').value = jobId;
+            }
+            if (dueDate) {
+                document.getElementById('dueDate').value = dueDate; // 隠しフィールドに納期をセット
+            }
+            // 作業者名を自動入力する処理（例：ログイン情報やlocalStorageから取得）
+            // ここでは仮の値をセットします。実際には適切な方法で設定してください。
+            document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者未設定';
+        });
+
+        const form = document.getElementById('maintenanceForm');
+        const confirmButton = document.getElementById('confirmButton');
+        const modal = document.getElementById('confirmationModal');
+        const confirmationList = document.getElementById('confirmationList');
+        const submitButton = document.getElementById('submitButton');
+        const editButton = document.getElementById('editButton');
+
+        // フォームのラベルとIDのマッピング (確認画面表示用)
+        const fieldLabels = {
+            workerName: '作業者名', jobId: '依頼ID', photo: '車両写真撮影', battery: 'バッテリー',
+            oil: 'オイル交換', element: 'エレメント交換', oilSeal: 'オイル交換時期シール貼付け',
+            washer: 'ウォッシャー液', coolant: 'クーラント補充', doorCheck: 'ドア開閉確認',
+            jackSet: '車載ジャッキSET', 
+            jack_item_jack: 'ジャッキ(欠品)', jack_item_handle: 'ハンドル(欠品)', jack_item_wrench: 'レンチ(欠品)',
+            wiperFront: 'ワイパー（運転席）', wiperPassenger: 'ワイパー（助手席）', wiperRear: 'リヤワイパー',
+            tire: 'タイヤ交換本数', air: 'タイヤ空気圧', cigarette: 'シガーソケット', ac: 'エアコン',
+            headlamp: 'ヘッドランプ', position: 'ポジションランプ', indicatorFront: 'ウインカーランプ前',
+            indicatorRear: 'ウインカーランプ後', roomlampFront: 'ルームランプ（前）',
+            roomlampRear: 'ルームランプ（後）', tail: 'テールランプ', back_lamp: 'バックランプ',
+            number_light: 'ナンバー灯', flare: '発煙筒', clean: '車内簡易清掃',
+            photoDrive: '車両写真ドライブ移行', note: '伝達事項'
+        };
+
+        confirmButton.addEventListener('click', function() {
+            confirmationList.innerHTML = ''; // リストをクリア
+            let allFieldsSelected = true;
+
+            // フォームの全要素をチェック (チェックボックスと備考欄以外)
+            form.querySelectorAll('select, input[type="text"]:not([readonly])').forEach(el => {
+                if (el.value === "" && el.id !== 'note') { // note (伝達事項) は任意入力の想定
+                     // allFieldsSelected = false; // 全て必須とする場合はこのコメントを外す
+                }
+            });
+
+            // if (!allFieldsSelected) {
+            //     alert('未選択の項目があります。すべての項目を選択または入力してください。');
+            //     return;
+            // }
+
+            const formData = new FormData(form);
+            for (const [name, value] of formData.entries()) {
+                if (name === 'dueDate') continue; // 納期は確認リストに表示しない
+
+                const fieldElement = form.elements[name];
+                let displayValue = value;
+                let labelText = fieldLabels[name];
+
+                if (!labelText) continue; // ラベルが未定義のものはスキップ
+
+                if (fieldElement.type === 'checkbox') {
+                    if (fieldElement.checked) {
+                        displayValue = "あり"; // または fieldElement.value (ジャッキ、ハンドルなど)
+                    } else {
+                        continue; // チェックされていないチェックボックスは表示しない
+                    }
+                } else if (fieldElement.tagName === 'SELECT' && value === "") {
+                    displayValue = "未選択";
+                } else if (value.trim() === '' && name !== 'note') {
+                    displayValue = "未入力";
+                }
+                
+                if (name === 'note' && value.trim() === '') {
+                    displayValue = "（記載なし）";
+                }
+
+
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${labelText}:</strong> ${displayValue}`;
+                confirmationList.appendChild(li);
+            }
+            modal.style.display = 'flex'; // flexで中央寄せ
+        });
+
+        editButton.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        submitButton.addEventListener('click', async function() {
+            // ここでスプレッドシートへの送信処理をGoogle Apps Script経由で実装します。
+            const formData = new FormData(form);
+            const dataToSubmit = {};
+
+            // スプレッドシートの列の順番に合わせてデータを構築
+            // "納期", "作業日時", "作業者名", "依頼ID", ...
+            dataToSubmit["納期"] = formData.get("dueDate"); // 隠しフィールドから納期を取得
+            dataToSubmit["作業日時"] = new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+            // 提供されたスプレッドシートの列順
+            const sheetColumns = [
+                "作業者名", "依頼ID", "写真撮影", "バッテリー", "オイル交換", "エレメント交換", "オイル交換時期シール貼付け",
+                "ウォッシャー液", "クーラント補充", "ドア開閉確認", "車載ジャッキSET",
+                "ジャッキ欠品_ジャッキ", "ジャッキ欠品_ハンドル", "ジャッキ欠品_レンチ", // スプレッドシート側の列名に合わせる
+                "ワイパー（運転席）", "ワイパー（助手席）", "リヤワイパー", "タイヤ交換本数", "タイヤ空気圧",
+                "シガーソケット", "エアコン", "ヘッドランプ", "ポジションランプ", "ウインカーランプ前",
+                "ウインカーランプ後", "ルームランプ（前）", "ルームランプ（後）", "テールランプ", "バックランプ",
+                "ナンバー灯", "発煙筒", "車内簡易清掃", "車両写真ドライブ移行", "伝達事項"
+            ];
+            
+            // HTMLフォームのname属性とマッピング (スプレッドシート列名に変換するキー)
+            const formToSheetMap = {
+                workerName: "作業者名", jobId: "依頼ID", photo: "写真撮影", battery: "バッテリー",
+                oil: "オイル交換", element: "エレメント交換", oilSeal: "オイル交換時期シール貼付け",
+                washer: "ウォッシャー液", coolant: "クーラント補充", doorCheck: "ドア開閉確認",
+                jackSet: "車載ジャッキSET",
+                jack_item_jack: "ジャッキ欠品_ジャッキ", jack_item_handle: "ジャッキ欠品_ハンドル", jack_item_wrench: "ジャッキ欠品_レンチ",
+                wiperFront: "ワイパー（運転席）", wiperPassenger: "ワイパー（助手席）", wiperRear: "リヤワイパー",
+                tire: "タイヤ交換本数", air: "タイヤ空気圧", cigarette: "シガーソケット", ac: "エアコン",
+                headlamp: "ヘッドランプ", position: "ポジションランプ", indicatorFront: "ウインカーランプ前",
+                indicatorRear: "ウインカーランプ後", roomlampFront: "ルームランプ（前）",
+                roomlampRear: "ルームランプ（後）", tail: "テールランプ", back_lamp: "バックランプ",
+                number_light: "ナンバー灯", flare: "発煙筒", clean: "車内簡易清掃",
+                photoDrive: "車両写真ドライブ移行", note: "伝達事項"
+            };
+
+            for (const formName in formToSheetMap) {
+                const sheetHeaderName = formToSheetMap[formName];
+                const element = form.elements[formName];
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        dataToSubmit[sheetHeaderName] = element.checked ? element.value : "なし"; // チェックされていればvalue、なければ"なし"
+                    } else {
+                        dataToSubmit[sheetHeaderName] = element.value || ""; // 未選択の場合は空文字
+                    }
+                }
+            }
+            
+            // 実際の送信データの整形（スプレッドシートの列順に合わせる）
+            const finalDataRow = [
+                dataToSubmit["納期"],
+                dataToSubmit["作業日時"],
+                dataToSubmit["作業者名"],
+                dataToSubmit["依頼ID"],
+                dataToSubmit["写真撮影"],
+                dataToSubmit["バッテリー"],
+                dataToSubmit["オイル交換"], // スプレッドシートのヘッダーは「オイルエレメント」とあるが、フォーム項目は「オイル交換」と「エレメント交換」
+                dataToSubmit["エレメント交換"], // こちらを「オイルエレメント」に対応させるか確認が必要
+                dataToSubmit["オイル交換時期シール貼付け"], // 「シール」
+                dataToSubmit["ウォッシャー液"], // 「ウォッシャー」
+                dataToSubmit["クーラント補充"], // 「クーラント」
+                dataToSubmit["ドア開閉確認"], // 「ドア確認」
+                dataToSubmit["車載ジャッキSET"], // 「ジャッキSET」
+                dataToSubmit["ジャッキ欠品_ジャッキ"], // 「ジャッキ」
+                dataToSubmit["ジャッキ欠品_ハンドル"], // 「ハンドル」
+                dataToSubmit["ジャッキ欠品_レンチ"],   // 「レンチ」
+                dataToSubmit["ワイパー（運転席）"],
+                dataToSubmit["ワイパー（助手席）"],
+                dataToSubmit["リヤワイパー"],
+                dataToSubmit["タイヤ交換本数"], //「タイヤ本数」
+                dataToSubmit["タイヤ空気圧"],   //「空気圧」
+                dataToSubmit["シガーソケット"], //「シガー」
+                dataToSubmit["エアコン"],
+                dataToSubmit["ヘッドランプ"],
+                dataToSubmit["ポジションランプ"], //「ポジション」
+                dataToSubmit["ウインカーランプ前"], //「ウインカー前」
+                dataToSubmit["ウインカーランプ後"], //「ウインカー後」
+                dataToSubmit["ルームランプ（前）"], //「ルームランプ前」
+                dataToSubmit["ルームランプ（後）"], //「ルームランプ後」
+                dataToSubmit["テールランプ"],
+                dataToSubmit["バックランプ"],
+                dataToSubmit["ナンバー灯"], //「ナンバー」
+                dataToSubmit["発煙筒"],
+                dataToSubmit["車内簡易清掃"], //「清掃」
+                dataToSubmit["車両写真ドライブ移行"], //「ドライブ転送」
+                dataToSubmit["伝達事項"] //「備考」
+            ];
+
+
+            console.log("Data to send to Sheet:", finalDataRow); // 送信するデータ配列を確認
+            alert('送信処理を実行します。（実際の送信は未実装です）\nこの後、Google Apps Scriptと連携してスプレッドシートにデータを送信します。');
+
+            // --- Google Apps Scriptへの送信処理 (例) ---
+            // const gasWebAppUrl = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_FOR_SAVING_DATA';
+            // try {
+            //     const response = await fetch(gasWebAppUrl, {
+            //         method: 'POST',
+            //         // mode: 'no-cors', // GAS側の設定による
+            //         cache: 'no-cache',
+            //         headers: {
+            //            'Content-Type': 'application/json' // GAS側でJSONをパースする場合
+            //         },
+            //         body: JSON.stringify({rowData: finalDataRow}) // 配列として送信
+            //     });
+            //     const result = await response.json(); // GASからの応答
+            //     if(result.success){
+            //        alert('データが正常に送信されました！');
+            //        form.reset(); // フォームをリセット
+            //        document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者未設定'; //作業者名再セット
+            //        // window.location.href = 'index.html'; // 一覧画面に戻るなど
+            //     } else {
+            //        alert('データの送信に失敗しました: ' + result.message);
+            //     }
+            // } catch (error) {
+            //     console.error('Error submitting data:', error);
+            //     alert('データの送信中にエラーが発生しました。');
+            // }
+            // --- ここまで送信処理の例 ---
+
+            modal.style.display = 'none'; // モーダルを閉じる
+        });
+
+        // モーダル外クリックで閉じる
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // ID/Name属性の調整: 'back' と 'number' は潜在的な衝突を避けるため変更
+        // 'back' -> 'back_lamp'
+        // 'number' -> 'number_light'
+        // これに伴い、fieldLabelsとformToSheetMapも上記で調整済みです。
+
+    </script>
+</body>
+</html>
