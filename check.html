@@ -89,9 +89,9 @@
     </div>
 
     <script>
-        // ▼▼▼ ご指定のGASウェブアプリのURLがここに設定されています (index.htmlと同じURLです) ▼▼▼
+        // ▼▼▼ ご指定のGASウェブアプリのURLが設定されています (index.htmlと同じURLです) ▼▼▼
         const gasPostUrl = 'https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec';
-        // ▲▲▲ ご指定のGASウェブアプリのURLがここに設定されています (index.htmlと同じURLです) ▲▲▲
+        // ▲▲▲ ご指定のGASウェブアプリのURLが設定されています (index.htmlと同じURLです) ▲▲▲
 
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -189,38 +189,35 @@
             try {
                 const response = await fetch(gasPostUrl, {
                     method: 'POST',
-                    mode: 'cors', // ★★★ 'no-cors' から 'cors' (または指定なし) に戻します ★★★
+                    mode: 'cors', // 'cors' モードに戻しました
                     cache: 'no-cache',
                     headers: {
-                        // ★★★ Content-Type を 'application/json' に戻します ★★★
-                        'Content-Type': 'application/json', 
+                        'Content-Type': 'application/json', // 'application/json' に戻しました
                     },
                     body: JSON.stringify({ rowData: dataToSubmit })
                 });
 
                 let result;
-                // レスポンスが空でないか、またJSONとして有効か確認
                 const responseText = await response.text();
                 if (responseText) {
                     try {
                         result = JSON.parse(responseText);
                     } catch (e) {
                         console.error("Failed to parse GAS response as JSON. Response text:", responseText);
-                        throw new Error("サーバーからの応答が不正です (Not JSON): " + responseText);
+                        throw new Error("サーバーからの応答が不正です (Not JSON): " + responseText.substring(0, 100)); // エラーメッセージにレスポンスの先頭部分を含める
                     }
                 } else {
-                    // レスポンスが空の場合は、エラーとして扱うか、状況に応じて処理
-                    throw new Error("サーバーから空の応答がありました。");
+                     throw new Error("サーバーから空の応答がありました。");
                 }
                 
-                if (response.ok && result && result.success) { // response.ok と result.success の両方を確認
+                if (response.ok && result && result.success) {
                     alert('データが正常に送信されました！');
                     form.reset(); 
                     document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者名を入力';
                     document.getElementById('jobId').value = ''; 
                     document.getElementById('dueDateHidden').value = '';
                 } else {
-                    alert('データの送信に失敗しました: ' + (result ? result.message : response.statusText || '不明なエラーです。GASのログやコンソールを確認してください。'));
+                    alert('データの送信に失敗しました: ' + (result ? result.message : (response.statusText || '不明なエラーです。コンソールを確認してください。')));
                 }
             } catch (error) {
                 console.error('Error submitting data:', error);
