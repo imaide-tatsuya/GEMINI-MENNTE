@@ -262,17 +262,17 @@
             confirmationList.innerHTML = ''; // リストをクリア
             let allFieldsSelected = true;
 
-            // フォームの全要素をチェック (チェックボックスと備考欄以外)
+           フォームの全要素をチェック (チェックボックスと備考欄以外)
             form.querySelectorAll('select, input[type="text"]:not([readonly])').forEach(el => {
                 if (el.value === "" && el.id !== 'note') { // note (伝達事項) は任意入力の想定
                      // allFieldsSelected = false; // 全て必須とする場合はこのコメントを外す
                 }
             });
 
-            // if (!allFieldsSelected) {
-            //     alert('未選択の項目があります。すべての項目を選択または入力してください。');
-            //     return;
-            // }
+            if (!allFieldsSelected) {
+                alert('未選択の項目があります。すべての項目を選択または入力してください。');
+                return;
+            }
 
             const formData = new FormData(form);
             for (const [name, value] of formData.entries()) {
@@ -403,9 +403,34 @@
 
 
             console.log("Data to send to Sheet:", finalDataRow); // 送信するデータ配列を確認
+            alert('送信処理を実行します。（実際の送信は未実装です）\nこの後、Google Apps Scriptと連携してスプレッドシートにデータを送信します。');
 
-
-
+            // --- Google Apps Scriptへの送信処理 (例) ---
+           const gasWebAppUrl = https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec;
+           try {
+              const response = await fetch(gasWebAppUrl, {
+                    method: 'POST',
+                   mode: 'no-cors', // GAS側の設定による
+                    cache: 'no-cache',
+                     headers: {
+                       'Content-Type': 'application/json' // GAS側でJSONをパースする場合
+                     },
+                    body: JSON.stringify({rowData: finalDataRow}) // 配列として送信
+                });
+                const result = await response.json(); // GASからの応答
+                if(result.success){
+                  alert('データが正常に送信されました！');
+                   form.reset(); // フォームをリセット
+                  document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者未設定'; //作業者名再セット
+                  window.location.href = 'index.html'; // 一覧画面に戻るなど
+              } else {
+                 alert('データの送信に失敗しました: ' + result.message);
+                 }
+             } catch (error) {
+                 console.error('Error submitting data:', error);
+                 alert('データの送信中にエラーが発生しました。');
+            }
+            // --- ここまで送信処理の例 ---
 
             modal.style.display = 'none'; // モーダルを閉じる
         });
