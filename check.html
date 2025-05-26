@@ -12,7 +12,7 @@
         .field label { display: block; margin-bottom: 6px; font-weight: bold; color: #555; font-size: 0.9em; }
         .field input[type="text"], .field select, .field textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1em; }
         .field input[readonly] { background-color: #e9e9e9; cursor: not-allowed; }
-        .checkbox-group label { font-weight: normal; margin-right: 15px; font-size: 0.9em; display: inline-block; /* 横並びのため */ }
+        .checkbox-group label { font-weight: normal; margin-right: 15px; font-size: 0.9em; display: inline-block; }
         .checkbox-group input[type="checkbox"] { width: auto; margin-right: 5px; vertical-align: middle;}
         .button-container { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
         .button-container button { padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin: 0 10px; }
@@ -30,9 +30,11 @@
     <div class="container">
         <h1>車両初期メンテナンス作業管理</h1>
         <form id="maintenanceForm">
-            <input type="hidden" name="dueDateHidden" id="dueDateHidden"> <div class="field"><label for="workerName">作業者名</label><input type="text" name="workerName" id="workerName" readonly /></div>
+            <input type="hidden" name="dueDateHidden" id="dueDateHidden">
+            <div class="field"><label for="workerName">作業者名</label><input type="text" name="workerName" id="workerName" readonly /></div>
             <div class="field"><label for="jobId">依頼ID</label><input type="text" name="jobId" id="jobId" required readonly /></div>
             
+            {/* */}
             <div class="field"><label for="photo">車両写真撮影</label><select name="photo" id="photo"><option value="">選択</option><option value="済">済</option><option value="不要">不要</option></select></div>
             <div class="field"><label for="battery">バッテリー</label><select name="battery" id="battery"><option value="">選択</option><option value="交換済">交換済</option><option value="流用">流用</option></select></div>
             <div class="field"><label for="oil">オイル交換</label><select name="oil" id="oil"><option value="">選択</option><option value="済">済</option><option value="流用">流用</option><option value="不要">不要</option></select></div>
@@ -70,7 +72,7 @@
             <div class="field"><label for="clean">車内簡易清掃</label><select name="clean" id="clean"><option value="">選択</option><option value="済">済</option><option value="不要">不要</option></select></div>
             <div class="field"><label for="photoDrive">車両写真ドライブ移行</label><select name="photoDrive" id="photoDrive"><option value="">選択</option><option value="済">済</option><option value="不要">不要</option></select></div>
             <div class="field"><label for="note">伝達事項</label><textarea name="note" id="note" rows="3" placeholder="例: 傷あり、補足事項など"></textarea></div>
-            
+
             <div class="button-container"><button type="button" id="confirmButton">確認</button></div>
         </form>
     </div>
@@ -97,7 +99,6 @@
             const dueDate = urlParams.get('dueDate');
             if (jobId) document.getElementById('jobId').value = jobId;
             if (dueDate) document.getElementById('dueDateHidden').value = dueDate;
-            // 作業者名はlocalStorage等から取得する例 (実際の運用に合わせてください)
             document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者名を入力';
         });
 
@@ -108,127 +109,121 @@
         const submitButton = document.getElementById('submitButton');
         const editButton = document.getElementById('editButton');
 
-        // モーダル表示用のラベル定義 (キーはフォーム要素のname属性と一致させる)
-        const fieldLabels = {
+        const fieldLabels = { /* ... (以前のラベル定義と同じなので省略) ... */
             workerName: '作業者名', jobId: '依頼ID', photo: '車両写真撮影', battery: 'バッテリー', oil: 'オイル交換', element: 'エレメント交換', oilSeal: 'オイル交換時期シール貼付け', washer: 'ウォッシャー液', coolant: 'クーラント補充', doorCheck: 'ドア開閉確認', jackSet: '車載ジャッキSET', jack_item_jack: 'ジャッキ(欠品)', jack_item_handle: 'ハンドル(欠品)', jack_item_wrench: 'レンチ(欠品)', wiperFront: 'ワイパー（運転席）', wiperPassenger: 'ワイパー（助手席）', wiperRear: 'リヤワイパー', tire: 'タイヤ交換本数', air: 'タイヤ空気圧', cigarette: 'シガーソケット', ac: 'エアコン', headlamp: 'ヘッドランプ', position: 'ポジションランプ', indicatorFront: 'ウインカーランプ前', indicatorRear: 'ウインカーランプ後', roomlampFront: 'ルームランプ（前）', roomlampRear: 'ルームランプ（後）', tail: 'テールランプ', back_lamp: 'バックランプ', number_light: 'ナンバー灯', flare: '発煙筒', clean: '車内簡易清掃', photoDrive: '車両写真ドライブ移行', note: '伝達事項'
         };
         
         confirmButton.addEventListener('click', function() {
-            confirmationList.innerHTML = ''; // 前回表示したリストをクリア
+            confirmationList.innerHTML = '';
             const formData = new FormData(form);
-            // 隠しフィールド「納期」も確認リストに表示する場合
             const dueDateValue = formData.get("dueDateHidden");
             if (dueDateValue) {
                 const li = document.createElement('li');
                 li.innerHTML = `<strong>納期:</strong> ${dueDateValue}`;
                 confirmationList.appendChild(li);
             }
-
             for (const [name, value] of formData.entries()) {
-                if (name === 'dueDateHidden') continue; // 既に表示したのでスキップ
-
+                if (name === 'dueDateHidden') continue;
                 let displayValue = value;
                 const fieldElement = form.elements[name];
-                const labelText = fieldLabels[name] || name; // ラベル定義がなければname属性をそのまま使用
-
+                const labelText = fieldLabels[name] || name;
                 if (fieldElement.type === 'checkbox') {
-                    if (!fieldElement.checked) continue; // チェックされていないチェックボックスは表示しない
-                    displayValue = fieldElement.value || "あり"; // チェックボックスのvalue属性値、なければ「あり」
-                } else if (value.trim() === '' && name !== 'note') { // 備考欄以外で空文字の場合
+                    if (!fieldElement.checked) continue;
+                    displayValue = fieldElement.value || "あり";
+                } else if (value.trim() === '' && name !== 'note') {
                     displayValue = "未選択/未入力";
                 }
-                
-                if (name === 'note' && value.trim() === '') { // 備考欄が空の場合
-                    displayValue = "（記載なし）";
-                }
-
+                if (name === 'note' && value.trim() === '') displayValue = "（記載なし）";
                 const li = document.createElement('li');
                 li.innerHTML = `<strong>${labelText}:</strong> ${displayValue}`;
                 confirmationList.appendChild(li);
             }
-            modal.style.display = 'flex'; // flexで中央寄せ
+            modal.style.display = 'flex';
         });
 
-        editButton.addEventListener('click', function() {
-            modal.style.display = 'none';
-        });
-
-        window.onclick = function(event) { // モーダル外クリックで閉じる
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
+        editButton.addEventListener('click', function() { modal.style.display = 'none'; });
+        window.onclick = function(event) { if (event.target == modal) modal.style.display = "none"; }
 
         submitButton.addEventListener('click', async function() {
             const formData = new FormData(form);
-            const dataToSubmit = []; // GASに送るための配列
+            const dataToSubmit = []; 
+            dataToSubmit.push(formData.get("dueDateHidden") || "");
+            dataToSubmit.push(new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'})); 
+            dataToSubmit.push(formData.get("workerName") || "");
+            dataToSubmit.push(formData.get("jobId") || "");
+            dataToSubmit.push(formData.get("photo") || "");
+            dataToSubmit.push(formData.get("battery") || "");
+            dataToSubmit.push(formData.get("oil") || "");
+            dataToSubmit.push(formData.get("element") || "");
+            dataToSubmit.push(formData.get("oilSeal") || "");
+            dataToSubmit.push(formData.get("washer") || "");
+            dataToSubmit.push(formData.get("coolant") || "");
+            dataToSubmit.push(formData.get("doorCheck") || "");
+            dataToSubmit.push(formData.get("jackSet") || "");
+            dataToSubmit.push(form.elements.jack_item_jack.checked ? form.elements.jack_item_jack.value : "なし");
+            dataToSubmit.push(form.elements.jack_item_handle.checked ? form.elements.jack_item_handle.value : "なし");
+            dataToSubmit.push(form.elements.jack_item_wrench.checked ? form.elements.jack_item_wrench.value : "なし");
+            dataToSubmit.push(formData.get("wiperFront") || "");
+            dataToSubmit.push(formData.get("wiperPassenger") || "");
+            dataToSubmit.push(formData.get("wiperRear") || "");
+            dataToSubmit.push(formData.get("tire") || "");
+            dataToSubmit.push(formData.get("air") || "");
+            dataToSubmit.push(formData.get("cigarette") || "");
+            dataToSubmit.push(formData.get("ac") || "");
+            dataToSubmit.push(formData.get("headlamp") || "");
+            dataToSubmit.push(formData.get("position") || "");
+            dataToSubmit.push(formData.get("indicatorFront") || "");
+            dataToSubmit.push(formData.get("indicatorRear") || "");
+            dataToSubmit.push(formData.get("roomlampFront") || "");
+            dataToSubmit.push(formData.get("roomlampRear") || "");
+            dataToSubmit.push(formData.get("tail") || "");
+            dataToSubmit.push(formData.get("back_lamp") || "");
+            dataToSubmit.push(formData.get("number_light") || "");
+            dataToSubmit.push(formData.get("flare") || "");
+            dataToSubmit.push(formData.get("clean") || "");
+            dataToSubmit.push(formData.get("photoDrive") || "");
+            dataToSubmit.push(formData.get("note") || "");
 
-            // GASのdoPost関数で定義したヘッダーの順番に合わせてデータを格納
-            dataToSubmit.push(formData.get("dueDateHidden") || ""); // 0: 納期
-            dataToSubmit.push(new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'})); // 1: 作業日時
-            dataToSubmit.push(formData.get("workerName") || "");       // 2: 作業者名
-            dataToSubmit.push(formData.get("jobId") || "");            // 3: 依頼ID
-            dataToSubmit.push(formData.get("photo") || "");            // 4: 写真撮影
-            dataToSubmit.push(formData.get("battery") || "");          // 5: バッテリー
-            dataToSubmit.push(formData.get("oil") || "");              // 6: オイル交換
-            dataToSubmit.push(formData.get("element") || "");          // 7: エレメント交換
-            dataToSubmit.push(formData.get("oilSeal") || "");          // 8: オイル交換時期シール貼付け
-            dataToSubmit.push(formData.get("washer") || "");           // 9: ウォッシャー液
-            dataToSubmit.push(formData.get("coolant") || "");          // 10: クーラント補充
-            dataToSubmit.push(formData.get("doorCheck") || "");        // 11: ドア開閉確認
-            dataToSubmit.push(formData.get("jackSet") || "");          // 12: 車載ジャッキSET
-            // チェックボックス項目 (チェックされていればvalue、なければ"なし")
-            dataToSubmit.push(form.elements.jack_item_jack.checked ? form.elements.jack_item_jack.value : "なし");     // 13: ジャッキ(欠品)
-            dataToSubmit.push(form.elements.jack_item_handle.checked ? form.elements.jack_item_handle.value : "なし"); // 14: ハンドル(欠品)
-            dataToSubmit.push(form.elements.jack_item_wrench.checked ? form.elements.jack_item_wrench.value : "なし"); // 15: レンチ(欠品)
-            dataToSubmit.push(formData.get("wiperFront") || "");       // 16: ワイパー（運転席）
-            dataToSubmit.push(formData.get("wiperPassenger") || "");   // 17: ワイパー（助手席）
-            dataToSubmit.push(formData.get("wiperRear") || "");        // 18: リヤワイパー
-            dataToSubmit.push(formData.get("tire") || "");             // 19: タイヤ交換本数
-            dataToSubmit.push(formData.get("air") || "");              // 20: タイヤ空気圧
-            dataToSubmit.push(formData.get("cigarette") || "");        // 21: シガーソケット
-            dataToSubmit.push(formData.get("ac") || "");               // 22: エアコン
-            dataToSubmit.push(formData.get("headlamp") || "");         // 23: ヘッドランプ
-            dataToSubmit.push(formData.get("position") || "");         // 24: ポジションランプ
-            dataToSubmit.push(formData.get("indicatorFront") || "");   // 25: ウインカーランプ前
-            dataToSubmit.push(formData.get("indicatorRear") || "");    // 26: ウインカーランプ後
-            dataToSubmit.push(formData.get("roomlampFront") || "");    // 27: ルームランプ（前）
-            dataToSubmit.push(formData.get("roomlampRear") || "");     // 28: ルームランプ（後）
-            dataToSubmit.push(formData.get("tail") || "");             // 29: テールランプ
-            dataToSubmit.push(formData.get("back_lamp") || "");        // 30: バックランプ
-            dataToSubmit.push(formData.get("number_light") || "");     // 31: ナンバー灯
-            dataToSubmit.push(formData.get("flare") || "");            // 32: 発煙筒
-            dataToSubmit.push(formData.get("clean") || "");            // 33: 車内簡易清掃
-            dataToSubmit.push(formData.get("photoDrive") || "");       // 34: 車両写真ドライブ移行
-            dataToSubmit.push(formData.get("note") || "");             // 35: 伝達事項
+            console.log("Submitting data to GAS:", dataToSubmit); // 送信するデータの内容をコンソールに表示
 
             try {
                 const response = await fetch(gasPostUrl, {
                     method: 'POST',
-                    mode: 'cors', // CORSモードを指定 (GAS側で特別な対応は不要な場合が多い)
+                    mode: 'cors', 
                     cache: 'no-cache',
                     headers: {
-                        'Content-Type': 'application/json'
+                        // ★★★ Content-Type を text/plain に変更 ★★★
+                        'Content-Type': 'text/plain', 
                     },
-                    body: JSON.stringify({ rowData: dataToSubmit }) // GAS側で e.postData.contents をパースする想定
+                    // 本文は引き続きJSON文字列を送信する
+                    body: JSON.stringify({ rowData: dataToSubmit }) 
                 });
-                const result = await response.json(); // GASからの応答をJSONとしてパース
-                if (result.success) {
+
+                // レスポンスがJSONでない場合も考慮（GASがエラーでHTMLを返す場合など）
+                let resultText = await response.text();
+                let result;
+                try {
+                    result = JSON.parse(resultText); // まずJSONとしてパースを試みる
+                } catch (e) {
+                    // JSONパースに失敗した場合、result.success がないのでエラーとして扱う
+                    console.error("Failed to parse GAS response as JSON. Response text:", resultText);
+                    throw new Error("サーバーからの応答が不正です。 (Not JSON)");
+                }
+
+                if (response.ok && result.success) { // response.ok もチェック
                     alert('データが正常に送信されました！');
-                    form.reset(); // フォームの内容をリセット
-                    // 作業者名などを再設定 (必要に応じて)
+                    form.reset(); 
                     document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者名を入力';
-                    document.getElementById('jobId').value = ''; // 依頼IDもクリア
-                    document.getElementById('dueDateHidden').value = ''; // 納期もクリア
-                    // window.location.href = 'index.html'; // 一覧画面に戻る場合など
+                    document.getElementById('jobId').value = ''; 
+                    document.getElementById('dueDateHidden').value = '';
                 } else {
-                    alert('データの送信に失敗しました: ' + (result.message || '不明なエラーです。GASのログを確認してください。'));
+                    alert('データの送信に失敗しました: ' + (result.message || resultText || '不明なエラーです。GASのログやコンソールを確認してください。'));
                 }
             } catch (error) {
                 console.error('Error submitting data:', error);
                 alert('データの送信中に通信エラーが発生しました: ' + error.message);
             }
-            modal.style.display = 'none'; // 送信処理後、モーダルを閉じる
+            modal.style.display = 'none';
         });
     </script>
 </body>
