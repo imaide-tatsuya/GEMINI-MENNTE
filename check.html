@@ -89,10 +89,7 @@
     </div>
 
     <script>
-        // ▼▼▼ ご指定のGASウェブアプリのURLが設定されています (index.htmlと同じURLです) ▼▼▼
         const gasPostUrl = 'https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec';
-        // ▲▲▲ ご指定のGASウェブアプリのURLが設定されています (index.htmlと同じURLです) ▲▲▲
-
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);
             const jobId = urlParams.get('jobId');
@@ -109,7 +106,7 @@
         const submitButton = document.getElementById('submitButton');
         const editButton = document.getElementById('editButton');
 
-        const fieldLabels = { /* ... (省略) ... */
+        const fieldLabels = {
             workerName: '作業者名', jobId: '依頼ID', photo: '車両写真撮影', battery: 'バッテリー', oil: 'オイル交換', element: 'エレメント交換', oilSeal: 'オイル交換時期シール貼付け', washer: 'ウォッシャー液', coolant: 'クーラント補充', doorCheck: 'ドア開閉確認', jackSet: '車載ジャッキSET', jack_item_jack: 'ジャッキ(欠品)', jack_item_handle: 'ハンドル(欠品)', jack_item_wrench: 'レンチ(欠品)', wiperFront: 'ワイパー（運転席）', wiperPassenger: 'ワイパー（助手席）', wiperRear: 'リヤワイパー', tire: 'タイヤ交換本数', air: 'タイヤ空気圧', cigarette: 'シガーソケット', ac: 'エアコン', headlamp: 'ヘッドランプ', position: 'ポジションランプ', indicatorFront: 'ウインカーランプ前', indicatorRear: 'ウインカーランプ後', roomlampFront: 'ルームランプ（前）', roomlampRear: 'ルームランプ（後）', tail: 'テールランプ', back_lamp: 'バックランプ', number_light: 'ナンバー灯', flare: '発煙筒', clean: '車内簡易清掃', photoDrive: '車両写真ドライブ移行', note: '伝達事項'
         };
         
@@ -189,10 +186,10 @@
             try {
                 const response = await fetch(gasPostUrl, {
                     method: 'POST',
-                    mode: 'cors', // 'cors' モードに戻しました
+                    mode: 'cors', 
                     cache: 'no-cache',
                     headers: {
-                        'Content-Type': 'application/json', // 'application/json' に戻しました
+                        'Content-Type': 'application/json', 
                     },
                     body: JSON.stringify({ rowData: dataToSubmit })
                 });
@@ -204,7 +201,7 @@
                         result = JSON.parse(responseText);
                     } catch (e) {
                         console.error("Failed to parse GAS response as JSON. Response text:", responseText);
-                        throw new Error("サーバーからの応答が不正です (Not JSON): " + responseText.substring(0, 100)); // エラーメッセージにレスポンスの先頭部分を含める
+                        throw new Error("サーバーからの応答が不正です (Not JSON): " + responseText.substring(0, 100));
                     }
                 } else {
                      throw new Error("サーバーから空の応答がありました。");
