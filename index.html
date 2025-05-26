@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>車両メンテナンス作業依頼一覧</title>
     <style>
+        /* CSSは変更ありませんので、以前のものをそのままお使いください */
         body { font-family: Arial, sans-serif; margin: 0; padding: 15px; background-color: #f4f4f4; color: #333; }
         h1 { text-align: center; color: #333; font-size: 1.5em; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -64,7 +65,7 @@
             requestListBody.innerHTML = '';
             const urlWithCacheBuster = spreadSheetUrl + (spreadSheetUrl.includes('?') ? '&' : '?') + 'timestamp=' + new Date().getTime();
             try {
-                const response = await fetch(urlWithCacheBuster, { cache: 'no-cache', mode: 'cors' });
+                const response = await fetch(urlWithCacheBuster, { cache: 'no-cache' }); // mode: 'cors' を削除
                 if (!response.ok) {
                     let errorText = `データ読み込み失敗 (サーバー応答: ${response.status} ${response.statusText})`;
                     try { 
@@ -104,7 +105,7 @@
             } catch (error) {
                 console.error('fetchRequests function error:', error);
                 loadingMessage.style.display = 'none';
-                errorMessage.textContent = `エラーが発生しました: ${error.message}`;
+                errorMessage.textContent = `エラーが発生しました: ${error.message}`; // "Failed to fetch" はここで表示される
                 errorMessage.style.display = 'block';
             }
         }
