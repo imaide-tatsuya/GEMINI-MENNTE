@@ -15,39 +15,12 @@
         tr:nth-child(even) { background-color: #f9f9f9; }
         #loading-message { text-align: center; padding: 20px; font-style: italic; }
         #error-message { text-align: center; padding: 20px; color: red; font-weight: bold; }
-
-        /* スマホ表示を考慮したスタイル */
         @media screen and (max-width: 768px) {
-            table, thead, tbody, th, td, tr {
-                display: block;
-            }
-            thead tr {
-                position: absolute;
-                top: -9999px;
-                left: -9999px;
-            }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
             tr { border: 1px solid #ccc; margin-bottom: 10px;}
-            td {
-                border: none;
-                border-bottom: 1px solid #eee;
-                position: relative;
-                padding-left: 45%; /* ラベル表示領域 */
-                padding-top: 8px;
-                padding-bottom: 8px;
-                text-align: right; /* 値を右寄せ */
-                min-height: 24px; /* 高さを確保 */
-            }
-            td:before {
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                left: 8px;
-                width: 40%; /* ラベルの幅 */
-                padding-right: 10px;
-                white-space: nowrap;
-                text-align: left;
-                font-weight: bold;
-            }
+            td { border: none; border-bottom: 1px solid #eee; position: relative; padding-left: 45%; padding-top: 8px; padding-bottom: 8px; text-align: right; min-height: 24px; }
+            td:before { position: absolute; top: 50%; transform: translateY(-50%); left: 8px; width: 40%; padding-right: 10px; white-space: nowrap; text-align: left; font-weight: bold; }
             td:nth-of-type(1):before { content: "依頼ID"; }
             td:nth-of-type(2):before { content: "依頼日"; }
             td:nth-of-type(3):before { content: "納期"; }
@@ -62,10 +35,8 @@
 </head>
 <body>
     <h1>車両メンテナンス作業依頼一覧</h1>
-
     <div id="loading-message">データを読み込み中です...</div>
     <div id="error-message" style="display:none;"></div>
-
     <table>
         <thead>
             <tr>
@@ -84,24 +55,15 @@
     </table>
 
     <script>
-        // ▼▼▼ ご指定のGoogle Apps ScriptウェブアプリのURLが設定されました ▼▼▼
+        // ▼▼▼ ご指定のGoogle Apps ScriptウェブアプリのURLが設定されています ▼▼▼
         const spreadSheetUrl = 'https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec';
-        // ▲▲▲ ご指定のGoogle Apps ScriptウェブアプリのURLが設定されました ▲▲▲
+        // ▲▲▲ ご指定のGoogle Apps ScriptウェブアプリのURLが設定されています ▲▲▲
 
         const requestListBody = document.getElementById('request-list');
         const loadingMessage = document.getElementById('loading-message');
         const errorMessage = document.getElementById('error-message');
 
         async function fetchRequests() {
-            // URL未設定のチェック (ご指定のURLが直接入ったので、このIF文は実質的に不要になりますが、念のため残します)
-            if (spreadSheetUrl === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE' || spreadSheetUrl.trim() === '') {
-                loadingMessage.style.display = 'none';
-                errorMessage.textContent = 'エラー: Google Apps ScriptのウェブアプリURLが設定されていません。HTMLファイル内のspreadSheetUrlを確認してください。';
-                errorMessage.style.display = 'block';
-                console.error('spreadSheetUrl is not set or is still the placeholder.');
-                return;
-            }
-
             loadingMessage.style.display = 'block';
             errorMessage.style.display = 'none';
             requestListBody.innerHTML = '';
@@ -109,24 +71,21 @@
             const urlWithCacheBuster = spreadSheetUrl + (spreadSheetUrl.includes('?') ? '&' : '?') + 'timestamp=' + new Date().getTime();
 
             try {
-                const response = await fetch(urlWithCacheBuster, { cache: 'no-cache' });
+                const response = await fetch(urlWithCacheBuster, { cache: 'no-cache', mode: 'cors' }); // mode: 'cors' を明示 (デフォルトでもありますが)
                 
                 if (!response.ok) {
-                    let errorText = `データの読み込みに失敗しました。サーバー応答: ${response.status} ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        if (errorData && errorData.error) {
-                           errorText += ` - 詳細: ${errorData.error}`;
-                           if(errorData.details) errorText += ` (${errorData.details})`;
+                    let errorText = `データ読み込み失敗 (サーバー応答: ${response.status} ${response.statusText})`;
+                    try { 
+                        const errData = await response.json(); 
+                        if (errData && errData.error) {
+                            errorText += ` - 詳細: ${errData.error}`;
+                            if(errData.details) errorText += ` (${errData.details})`;
                         }
-                    } catch (e) {
-                        console.warn('Could not parse error response as JSON:', e);
-                    }
+                    } catch (e) { /* JSONパース失敗時は追加情報なし */ }
                     throw new Error(errorText);
                 }
 
                 const data = await response.json();
-                
                 loadingMessage.style.display = 'none';
 
                 if (Array.isArray(data) && data.length > 0) {
@@ -148,11 +107,10 @@
                     errorMessage.textContent = '表示する作業依頼はありません。';
                     errorMessage.style.display = 'block';
                 } else {
-                    console.error('Fetched data is not in expected format (array):', data);
-                    errorMessage.textContent = '受信したデータの形式が正しくありません。GASの応答が配列形式であることを確認してください。';
+                    console.error('Fetched data is not an array:', data);
+                    errorMessage.textContent = '受信データ形式エラー。GAS応答が配列ではありません。コンソールを確認してください。';
                     errorMessage.style.display = 'block';
                 }
-
             } catch (error) {
                 console.error('fetchRequests function error:', error);
                 loadingMessage.style.display = 'none';
@@ -160,7 +118,6 @@
                 errorMessage.style.display = 'block';
             }
         }
-
         window.onload = fetchRequests;
     </script>
 </body>
