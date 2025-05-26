@@ -84,21 +84,16 @@
     </table>
 
     <script>
-        // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-        // ▼ 【重要】ここに、Google Apps Scriptをデプロイして取得した「ウェブアプリのURL」を貼り付けてください ▼
-        // ▼ (このURLは、以前あなたがブラウザに直接入力してJSONデータが表示されたものです)            ▼
-        // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-        const spreadSheetUrl = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE'; // 例: 'https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXXX/exec'
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-        // ▲ 【重要】必ず上記の 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE' の部分をご自身のURLに書き換えてください ▲
-        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+        // ▼▼▼ ご指定のGoogle Apps ScriptウェブアプリのURLが設定されました ▼▼▼
+        const spreadSheetUrl = 'https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec';
+        // ▲▲▲ ご指定のGoogle Apps ScriptウェブアプリのURLが設定されました ▲▲▲
 
         const requestListBody = document.getElementById('request-list');
         const loadingMessage = document.getElementById('loading-message');
         const errorMessage = document.getElementById('error-message');
 
         async function fetchRequests() {
-            // URL未設定のチェック
+            // URL未設定のチェック (ご指定のURLが直接入ったので、このIF文は実質的に不要になりますが、念のため残します)
             if (spreadSheetUrl === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE' || spreadSheetUrl.trim() === '') {
                 loadingMessage.style.display = 'none';
                 errorMessage.textContent = 'エラー: Google Apps ScriptのウェブアプリURLが設定されていません。HTMLファイル内のspreadSheetUrlを確認してください。';
@@ -107,16 +102,13 @@
                 return;
             }
 
-            // 読み込みメッセージを表示（エラーメッセージは非表示）
             loadingMessage.style.display = 'block';
             errorMessage.style.display = 'none';
-            requestListBody.innerHTML = ''; // 既存の表示をクリア
+            requestListBody.innerHTML = '';
 
-            // キャッシュを避けるために、URLにタイムスタンプを追加
             const urlWithCacheBuster = spreadSheetUrl + (spreadSheetUrl.includes('?') ? '&' : '?') + 'timestamp=' + new Date().getTime();
 
             try {
-                // fetchリクエストにキャッシュオプションを追加
                 const response = await fetch(urlWithCacheBuster, { cache: 'no-cache' });
                 
                 if (!response.ok) {
@@ -140,7 +132,6 @@
                 if (Array.isArray(data) && data.length > 0) {
                     data.forEach(item => {
                         const tr = document.createElement('tr');
-                        // JSONのキー名 (item.id, item.requestDateなど) は、GASのdoGet関数で返しているものと一致させる
                         tr.innerHTML = `
                             <td class="request-id"><a href="check.html?jobId=${item.id || ''}&dueDate=${item.dueDate || ''}">${item.id || 'N/A'}</a></td>
                             <td>${item.requestDate || ''}</td>
@@ -170,7 +161,6 @@
             }
         }
 
-        // ページが読み込まれたらデータを取得して表示
         window.onload = fetchRequests;
     </script>
 </body>
