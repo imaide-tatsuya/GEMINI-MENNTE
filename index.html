@@ -15,39 +15,12 @@
         tr:nth-child(even) { background-color: #f9f9f9; }
         #loading-message { text-align: center; padding: 20px; font-style: italic; }
         #error-message { text-align: center; padding: 20px; color: red; font-weight: bold; }
-
-        /* スマホ表示を考慮したスタイル */
         @media screen and (max-width: 768px) {
-            table, thead, tbody, th, td, tr {
-                display: block;
-            }
-            thead tr {
-                position: absolute;
-                top: -9999px;
-                left: -9999px;
-            }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
             tr { border: 1px solid #ccc; margin-bottom: 10px;}
-            td {
-                border: none;
-                border-bottom: 1px solid #eee;
-                position: relative;
-                padding-left: 45%; /* ラベル表示領域 */
-                padding-top: 8px;
-                padding-bottom: 8px;
-                text-align: right; /* 値を右寄せ */
-                min-height: 24px; /* 高さを確保 */
-            }
-            td:before {
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                left: 8px;
-                width: 40%; /* ラベルの幅 */
-                padding-right: 10px;
-                white-space: nowrap;
-                text-align: left;
-                font-weight: bold;
-            }
+            td { border: none; border-bottom: 1px solid #eee; position: relative; padding-left: 45%; padding-top: 8px; padding-bottom: 8px; text-align: right; min-height: 24px; }
+            td:before { position: absolute; top: 50%; transform: translateY(-50%); left: 8px; width: 40%; padding-right: 10px; white-space: nowrap; text-align: left; font-weight: bold; }
             td:nth-of-type(1):before { content: "依頼ID"; }
             td:nth-of-type(2):before { content: "依頼日"; }
             td:nth-of-type(3):before { content: "納期"; }
@@ -62,10 +35,8 @@
 </head>
 <body>
     <h1>車両メンテナンス作業依頼一覧</h1>
-
     <div id="loading-message">データを読み込み中です...</div>
     <div id="error-message" style="display:none;"></div>
-
     <table>
         <thead>
             <tr>
@@ -84,58 +55,41 @@
     </table>
 
     <script>
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        // ★ 必ずここに、Google Apps Scriptをデプロイした際に取得した「ウェブアプリのURL」を設定してください ★
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        const spreadSheetUrl = 'https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec'; // 例: 'https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXXX/exec'
+        // ▼▼▼ GASウェブアプリのURLがここに設定されています ▼▼▼
+        const spreadSheetUrl = 'https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec';
+        // ▲▲▲ GASウェブアプリのURLがここに設定されています ▲▲▲
 
         const requestListBody = document.getElementById('request-list');
         const loadingMessage = document.getElementById('loading-message');
         const errorMessage = document.getElementById('error-message');
 
         async function fetchRequests() {
-            if (spreadSheetUrl === 'https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec' || spreadSheetUrl === '') {
-                loadingMessage.style.display = 'none';
-                errorMessage.textContent = 'エラー: Google Apps ScriptのウェブアプリURLが設定されていません。scriptタグ内のspreadSheetUrlを確認してください。';
-                errorMessage.style.display = 'block';
-                return;
-            }
+            loadingMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            requestListBody.innerHTML = '';
 
             try {
                 const response = await fetch(spreadSheetUrl);
                 if (!response.ok) {
-                    // response.status や response.statusText で詳細なエラー情報を取得可能
-                    let errorText = `データの読み込みに失敗しました。ステータス: ${response.status}`;
-                    try {
-                        const errorData = await response.json(); // GASからエラー詳細がJSONで返ってくる場合
-                        if (errorData && errorData.error) {
-                           errorText += ` - ${errorData.error}`;
-                           if(errorData.details) errorText += ` (詳細: ${errorData.details})`;
-                        }
-                    } catch (e) {
-                        // JSONパース失敗
-                    }
+                    let errorText = `データ読み込み失敗 (サーバー応答: ${response.status} ${response.statusText})`;
+                    try { const errData = await response.json(); if (errData && errData.error) errorText += ` - 詳細: ${errData.error}`; } catch (e) {}
                     throw new Error(errorText);
                 }
-
-                const data = await response.json(); // GASからの応答はJSON形式のはず
-                
-                loadingMessage.style.display = 'none'; // 読み込みメッセージを非表示
-                requestListBody.innerHTML = ''; // 既存の行をクリア（念のため）
+                const data = await response.json();
+                loadingMessage.style.display = 'none';
 
                 if (Array.isArray(data) && data.length > 0) {
                     data.forEach(item => {
                         const tr = document.createElement('tr');
-                        // JSONのキー名 (item.id, item.requestDateなど) は、GASのdoGet関数で返しているものと一致させる
                         tr.innerHTML = `
-                            <td class="request-id"><a href="check.html?jobId=<span class="math-inline">\{item\.id\}&dueDate\=</span>{item.dueDate || ''}"><span class="math-inline">\{item\.id \|\| 'N/A'\}</a\></td\>
-<td\></span>{item.requestDate || ''}</td>
-                            <td><span class="math-inline">\{item\.dueDate \|\| ''\}</td\>
-<td\></span>{item.initialMaintenance || ''}</td>
-                            <td><span class="math-inline">\{item\.photoShooting \|\| ''\}</td\>
-<td\></span>{item.internalMgmtNo || ''}</td>
-                            <td><span class="math-inline">\{item\.vehicleLocation \|\| ''\}</td\>
-<td\></span>{item.other || ''}</td>
+                            <td class="request-id"><a href="check.html?jobId=${item.id}&dueDate=${item.dueDate || ''}">${item.id || 'N/A'}</a></td>
+                            <td>${item.requestDate || ''}</td>
+                            <td>${item.dueDate || ''}</td>
+                            <td>${item.initialMaintenance || ''}</td>
+                            <td>${item.photoShooting || ''}</td>
+                            <td>${item.internalMgmtNo || ''}</td>
+                            <td>${item.vehicleLocation || ''}</td>
+                            <td>${item.other || ''}</td>
                         `;
                         requestListBody.appendChild(tr);
                     });
@@ -143,15 +97,18 @@
                     errorMessage.textContent = '表示する作業依頼はありません。';
                     errorMessage.style.display = 'block';
                 } else {
-                    // データが配列でない、または予期しない形式の場合
-                    console.error('Fetched data is not an array or is empty:', data);
-                    errorMessage.textContent = '受信したデータの形式が正しくありません。GASの応答を確認してください。';
+                    console.error('Fetched data is not an array:', data);
+                    errorMessage.textContent = '受信データ形式エラー。GAS応答が配列ではありません。';
                     errorMessage.style.display = 'block';
                 }
-
             } catch (error) {
-                console.error('Error fetching requests:', error);
+                console.error('fetchRequests function error:', error);
                 loadingMessage.style.display = 'none';
                 errorMessage.textContent = `エラー: ${error.message}`;
                 errorMessage.style.display = 'block';
-                requestListBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">データの読み込みに失敗しました。詳細はコンソールを確認してください
+            }
+        }
+        window.onload = fetchRequests;
+    </script>
+</body>
+</html>
