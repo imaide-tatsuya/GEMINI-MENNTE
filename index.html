@@ -13,6 +13,9 @@
         .request-id a { color: #007bff; text-decoration: none; font-weight: bold; }
         .request-id a:hover { text-decoration: underline; }
         tr:nth-child(even) { background-color: #f9f9f9; }
+        #loading-message { text-align: center; padding: 20px; font-style: italic; }
+        #error-message { text-align: center; padding: 20px; color: red; font-weight: bold; }
+
         /* スマホ表示を考慮したスタイル */
         @media screen and (max-width: 768px) {
             table, thead, tbody, th, td, tr {
@@ -59,6 +62,10 @@
 </head>
 <body>
     <h1>車両メンテナンス作業依頼一覧</h1>
+
+    <div id="loading-message">データを読み込み中です...</div>
+    <div id="error-message" style="display:none;"></div>
+
     <table>
         <thead>
             <tr>
@@ -73,82 +80,86 @@
             </tr>
         </thead>
         <tbody id="request-list">
-            <tr>
-                <td class="request-id"><a href="check.html?jobId=AB001&dueDate=2025/05/16">AB001</a></td>
-                <td>2025/05/13</td>
-                <td>2025/05/16</td>
-                <td>〇</td>
-                <td>〇</td>
-                <td>〇</td>
-                <td>そら P</td>
-                <td>テスト</td>
-            </tr>
-            <tr>
-                <td class="request-id"><a href="check.html?jobId=AB002&dueDate=2025/05/17">AB002</a></td>
-                <td>2025/05/14</td>
-                <td>2025/05/17</td>
-                <td>〇</td>
-                <td>〇</td>
-                <td>〇</td>
-                <td>そら P</td>
-                <td>テスト</td>
-            </tr>
-            <tr>
-                <td class="request-id"><a href="check.html?jobId=AB003&dueDate=2025/05/18">AB003</a></td>
-                <td>2025/05/15</td>
-                <td>2025/05/18</td>
-                <td>〇</td>
-                <td>〇</td>
-                <td>×</td>
-                <td>そら P</td>
-                <td>テスト</td>
-            </tr>
-            <tr>
-                <td class="request-id"><a href="check.html?jobId=AB004&dueDate=2025/05/19">AB004</a></td>
-                <td>2025/05/16</td>
-                <td>2025/05/19</td>
-                <td>〇</td>
-                <td>×</td>
-                <td>×</td>
-                <td>そら P</td>
-                <td>テスト</td>
-            </tr>
-        </tbody>
+            </tbody>
     </table>
+
     <script>
-        // このスクリプトブロックに、Google Apps Scriptなどを使用して
-        // スプレッドシート (gid=0) からデータを取得し、
-        // 上記の tbody#request-list に行を動的に追加する処理を記述します。
-        // 例:
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★ 必ずここに、Google Apps Scriptをデプロイした際に取得した「ウェブアプリのURL」を設定してください ★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        const spreadSheetUrl = https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec; // 例: 'https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXXX/exec'
+
+        const requestListBody = document.getElementById('request-list');
+        const loadingMessage = document.getElementById('loading-message');
+        const errorMessage = document.getElementById('error-message');
+
         async function fetchRequests() {
-            const spreadSheetUrl = https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec;
-           try {
-              const response = await fetch(spreadSheetUrl);
-                 const data = await response.json(); // 例: [{id: "AB001", requestDate: "2025/05/13", ...}, ...]
-                const tbody = document.getElementById('request-list');
-                tbody.innerHTML = ''; // 既存の行をクリア
-                data.forEach(item => {
-                   const tr = document.createElement('tr');
-                    // 納期(dueDate)もクエリパラメータで渡すようにする
-                   tr.innerHTML = `
-                        <td class="request-id"><a href="check.html?jobId=${item.id}&dueDate=${item.dueDate}">${item.id}</a></td>
-                        <td>${item.requestDate}</td>
-                        <td>${item.dueDate}</td>
-                       <td>${item.initialMaintenance}</td>
-                        <td>${item.photoShooting}</td>
-                       <td>${item.internalMgmtNo}</td>
-                         <td>${item.vehicleLocation}</td>
-                         <td>${item.other}</td>
-                     `;
-                     tbody.appendChild(tr);
-                });
-             } catch (error) {
-                 console.error('Error fetching requests:', error);
-                tbody.innerHTML = '<tr><td colspan="8">データの読み込みに失敗しました。</td></tr>';
-             }
+            if (spreadSheetUrl === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE' || spreadSheetUrl === '') {
+                loadingMessage.style.display = 'none';
+                errorMessage.textContent = 'エラー: Google Apps ScriptのウェブアプリURLが設定されていません。scriptタグ内のspreadSheetUrlを確認してください。';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(spreadSheetUrl);
+                if (!response.ok) {
+                    // response.status や response.statusText で詳細なエラー情報を取得可能
+                    let errorText = `データの読み込みに失敗しました。ステータス: ${response.status}`;
+                    try {
+                        const errorData = await response.json(); // GASからエラー詳細がJSONで返ってくる場合
+                        if (errorData && errorData.error) {
+                           errorText += ` - ${errorData.error}`;
+                           if(errorData.details) errorText += ` (詳細: ${errorData.details})`;
+                        }
+                    } catch (e) {
+                        // JSONパース失敗
+                    }
+                    throw new Error(errorText);
+                }
+
+                const data = await response.json(); // GASからの応答はJSON形式のはず
+                
+                loadingMessage.style.display = 'none'; // 読み込みメッセージを非表示
+                requestListBody.innerHTML = ''; // 既存の行をクリア（念のため）
+
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(item => {
+                        const tr = document.createElement('tr');
+                        // JSONのキー名 (item.id, item.requestDateなど) は、GASのdoGet関数で返しているものと一致させる
+                        tr.innerHTML = `
+                            <td class="request-id"><a href="check.html?jobId=${item.id}&dueDate=${item.dueDate || ''}">${item.id || 'N/A'}</a></td>
+                            <td>${item.requestDate || ''}</td>
+                            <td>${item.dueDate || ''}</td>
+                            <td>${item.initialMaintenance || ''}</td>
+                            <td>${item.photoShooting || ''}</td>
+                            <td>${item.internalMgmtNo || ''}</td>
+                            <td>${item.vehicleLocation || ''}</td>
+                            <td>${item.other || ''}</td>
+                        `;
+                        requestListBody.appendChild(tr);
+                    });
+                } else if (Array.isArray(data) && data.length === 0) {
+                    errorMessage.textContent = '表示する作業依頼はありません。';
+                    errorMessage.style.display = 'block';
+                } else {
+                    // データが配列でない、または予期しない形式の場合
+                    console.error('Fetched data is not an array or is empty:', data);
+                    errorMessage.textContent = '受信したデータの形式が正しくありません。GASの応答を確認してください。';
+                    errorMessage.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Error fetching requests:', error);
+                loadingMessage.style.display = 'none';
+                errorMessage.textContent = `エラー: ${error.message}`;
+                errorMessage.style.display = 'block';
+                requestListBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:red;">データの読み込みに失敗しました。詳細はコンソールを確認してください。</td></tr>`;
+            }
         }
+
+        // ページが読み込まれたらデータを取得して表示
         window.onload = fetchRequests;
-        // ※ 上記JavaScriptは実際の動作にはGoogle Apps Script側の実装が必要です。
     </script>
 </body>
 </html>
