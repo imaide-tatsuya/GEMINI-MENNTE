@@ -184,35 +184,47 @@
             dataToSubmit.push(formData.get("photoDrive") || "");
             dataToSubmit.push(formData.get("note") || "");
 
-            console.log("Submitting data to GAS with mode:no-cors. Payload:", dataToSubmit);
+            console.log("Submitting data to GAS. Payload:", dataToSubmit);
 
             try {
-                await fetch(gasPostUrl, { // response 変数は不要になる
+                const response = await fetch(gasPostUrl, {
                     method: 'POST',
-                    // ★★★ fetch の mode を 'no-cors' に変更 ★★★
-                    mode: 'no-cors', 
+                    mode: 'cors', // ★★★ 'no-cors' から 'cors' (または指定なし) に戻します ★★★
                     cache: 'no-cache',
                     headers: {
-                        // 'no-cors' モードでは Content-Type を指定しても実際には反映されないことが多いですが、
-                        // GAS側は e.postData.contents で文字列として受け取るため、
-                        // 'text/plain' または 'application/json' のままでも大きな影響はないはずです。
-                        // ここでは前回試した 'text/plain' のままにしておきます。
-                        'Content-Type': 'text/plain', 
+                        // ★★★ Content-Type を 'application/json' に戻します ★★★
+                        'Content-Type': 'application/json', 
                     },
                     body: JSON.stringify({ rowData: dataToSubmit })
                 });
 
-                // 'no-cors' モードではサーバーからの応答は確認できない
-                alert('データ送信を試みました。\nサーバーでの成功は確認できませんので、スプレッドシートを直接ご確認ください。');
-                form.reset(); 
-                document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者名を入力';
-                document.getElementById('jobId').value = ''; 
-                document.getElementById('dueDateHidden').value = '';
-
+                let result;
+                // レスポンスが空でないか、またJSONとして有効か確認
+                const responseText = await response.text();
+                if (responseText) {
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (e) {
+                        console.error("Failed to parse GAS response as JSON. Response text:", responseText);
+                        throw new Error("サーバーからの応答が不正です (Not JSON): " + responseText);
+                    }
+                } else {
+                    // レスポンスが空の場合は、エラーとして扱うか、状況に応じて処理
+                    throw new Error("サーバーから空の応答がありました。");
+                }
+                
+                if (response.ok && result && result.success) { // response.ok と result.success の両方を確認
+                    alert('データが正常に送信されました！');
+                    form.reset(); 
+                    document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者名を入力';
+                    document.getElementById('jobId').value = ''; 
+                    document.getElementById('dueDateHidden').value = '';
+                } else {
+                    alert('データの送信に失敗しました: ' + (result ? result.message : response.statusText || '不明なエラーです。GASのログやコンソールを確認してください。'));
+                }
             } catch (error) {
-                // 'no-cors' モードでも、DNS解決失敗やネットワーク切断などの場合はエラーになることがある
-                console.error('Error submitting data (even with no-cors):', error);
-                alert('データの送信中に予期せぬエラーが発生しました: ' + error.message + '\nこのエラーは通常no-corsモードでは稀ですが、ネットワーク接続などを確認してください。');
+                console.error('Error submitting data:', error);
+                alert('データの送信中にエラーが発生しました: ' + error.message);
             }
             modal.style.display = 'none';
         });
