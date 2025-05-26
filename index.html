@@ -94,7 +94,7 @@
         const errorMessage = document.getElementById('error-message');
 
         async function fetchRequests() {
-            if (spreadSheetUrl === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE' || spreadSheetUrl === '') {
+            if (spreadSheetUrl === 'https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec' || spreadSheetUrl === '') {
                 loadingMessage.style.display = 'none';
                 errorMessage.textContent = 'エラー: Google Apps ScriptのウェブアプリURLが設定されていません。scriptタグ内のspreadSheetUrlを確認してください。';
                 errorMessage.style.display = 'block';
