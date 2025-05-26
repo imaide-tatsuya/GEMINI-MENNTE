@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>車両初期メンテナンス作業管理</title>
     <style>
+        /* CSSスタイルは前回と同じなので省略します。前回のものをそのままお使いください。 */
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
         .container { max-width: 800px; margin: 20px auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #333; font-size: 1.5em; margin-bottom: 20px; }
@@ -17,7 +18,6 @@
         .button-container { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
         .button-container button { padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin: 0 10px; }
         #confirmButton { background-color: #28a745; color: white; }
-        /* Modal styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
         .modal-content { background-color: #fff; margin: auto; padding: 25px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-height: 80vh; overflow-y: auto; }
         .modal-content h2 { margin-top:0; font-size: 1.3em;}
@@ -109,7 +109,7 @@
         const submitButton = document.getElementById('submitButton');
         const editButton = document.getElementById('editButton');
 
-        const fieldLabels = { /* ... (以前のラベル定義と同じなので省略) ... */
+        const fieldLabels = { /* ... (省略) ... */
             workerName: '作業者名', jobId: '依頼ID', photo: '車両写真撮影', battery: 'バッテリー', oil: 'オイル交換', element: 'エレメント交換', oilSeal: 'オイル交換時期シール貼付け', washer: 'ウォッシャー液', coolant: 'クーラント補充', doorCheck: 'ドア開閉確認', jackSet: '車載ジャッキSET', jack_item_jack: 'ジャッキ(欠品)', jack_item_handle: 'ハンドル(欠品)', jack_item_wrench: 'レンチ(欠品)', wiperFront: 'ワイパー（運転席）', wiperPassenger: 'ワイパー（助手席）', wiperRear: 'リヤワイパー', tire: 'タイヤ交換本数', air: 'タイヤ空気圧', cigarette: 'シガーソケット', ac: 'エアコン', headlamp: 'ヘッドランプ', position: 'ポジションランプ', indicatorFront: 'ウインカーランプ前', indicatorRear: 'ウインカーランプ後', roomlampFront: 'ルームランプ（前）', roomlampRear: 'ルームランプ（後）', tail: 'テールランプ', back_lamp: 'バックランプ', number_light: 'ナンバー灯', flare: '発煙筒', clean: '車内簡易清掃', photoDrive: '車両写真ドライブ移行', note: '伝達事項'
         };
         
@@ -147,7 +147,7 @@
         submitButton.addEventListener('click', async function() {
             const formData = new FormData(form);
             const dataToSubmit = []; 
-            dataToSubmit.push(formData.get("dueDateHidden") || "");
+            dataToSubmit.push(formData.get("dueDateHidden") || ""); 
             dataToSubmit.push(new Date().toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'})); 
             dataToSubmit.push(formData.get("workerName") || "");
             dataToSubmit.push(formData.get("jobId") || "");
@@ -184,44 +184,35 @@
             dataToSubmit.push(formData.get("photoDrive") || "");
             dataToSubmit.push(formData.get("note") || "");
 
-            console.log("Submitting data to GAS:", dataToSubmit); // 送信するデータの内容をコンソールに表示
+            console.log("Submitting data to GAS with mode:no-cors. Payload:", dataToSubmit);
 
             try {
-                const response = await fetch(gasPostUrl, {
+                await fetch(gasPostUrl, { // response 変数は不要になる
                     method: 'POST',
-                    mode: 'cors', 
+                    // ★★★ fetch の mode を 'no-cors' に変更 ★★★
+                    mode: 'no-cors', 
                     cache: 'no-cache',
                     headers: {
-                        // ★★★ Content-Type を text/plain に変更 ★★★
+                        // 'no-cors' モードでは Content-Type を指定しても実際には反映されないことが多いですが、
+                        // GAS側は e.postData.contents で文字列として受け取るため、
+                        // 'text/plain' または 'application/json' のままでも大きな影響はないはずです。
+                        // ここでは前回試した 'text/plain' のままにしておきます。
                         'Content-Type': 'text/plain', 
                     },
-                    // 本文は引き続きJSON文字列を送信する
-                    body: JSON.stringify({ rowData: dataToSubmit }) 
+                    body: JSON.stringify({ rowData: dataToSubmit })
                 });
 
-                // レスポンスがJSONでない場合も考慮（GASがエラーでHTMLを返す場合など）
-                let resultText = await response.text();
-                let result;
-                try {
-                    result = JSON.parse(resultText); // まずJSONとしてパースを試みる
-                } catch (e) {
-                    // JSONパースに失敗した場合、result.success がないのでエラーとして扱う
-                    console.error("Failed to parse GAS response as JSON. Response text:", resultText);
-                    throw new Error("サーバーからの応答が不正です。 (Not JSON)");
-                }
+                // 'no-cors' モードではサーバーからの応答は確認できない
+                alert('データ送信を試みました。\nサーバーでの成功は確認できませんので、スプレッドシートを直接ご確認ください。');
+                form.reset(); 
+                document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者名を入力';
+                document.getElementById('jobId').value = ''; 
+                document.getElementById('dueDateHidden').value = '';
 
-                if (response.ok && result.success) { // response.ok もチェック
-                    alert('データが正常に送信されました！');
-                    form.reset(); 
-                    document.getElementById('workerName').value = localStorage.getItem('userName') || '担当者名を入力';
-                    document.getElementById('jobId').value = ''; 
-                    document.getElementById('dueDateHidden').value = '';
-                } else {
-                    alert('データの送信に失敗しました: ' + (result.message || resultText || '不明なエラーです。GASのログやコンソールを確認してください。'));
-                }
             } catch (error) {
-                console.error('Error submitting data:', error);
-                alert('データの送信中に通信エラーが発生しました: ' + error.message);
+                // 'no-cors' モードでも、DNS解決失敗やネットワーク切断などの場合はエラーになることがある
+                console.error('Error submitting data (even with no-cors):', error);
+                alert('データの送信中に予期せぬエラーが発生しました: ' + error.message + '\nこのエラーは通常no-corsモードでは稀ですが、ネットワーク接続などを確認してください。');
             }
             modal.style.display = 'none';
         });
