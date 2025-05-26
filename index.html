@@ -50,15 +50,10 @@
                 <th>その他</th>
             </tr>
         </thead>
-        <tbody id="request-list">
-            </tbody>
+        <tbody id="request-list"></tbody>
     </table>
-
     <script>
-        // ▼▼▼ ご指定のGoogle Apps ScriptウェブアプリのURLが設定されています ▼▼▼
         const spreadSheetUrl = 'https://script.google.com/macros/s/AKfycbxcwweBrhTwCu0SzRl_6gFMnviXP_O_8RAzZA9jPqHpWcruTLyWA0dqNuyxgstme1e0aw/exec';
-        // ▲▲▲ ご指定のGoogle Apps ScriptウェブアプリのURLが設定されています ▲▲▲
-
         const requestListBody = document.getElementById('request-list');
         const loadingMessage = document.getElementById('loading-message');
         const errorMessage = document.getElementById('error-message');
@@ -67,12 +62,9 @@
             loadingMessage.style.display = 'block';
             errorMessage.style.display = 'none';
             requestListBody.innerHTML = '';
-
             const urlWithCacheBuster = spreadSheetUrl + (spreadSheetUrl.includes('?') ? '&' : '?') + 'timestamp=' + new Date().getTime();
-
             try {
-                const response = await fetch(urlWithCacheBuster, { cache: 'no-cache', mode: 'cors' }); // mode: 'cors' を明示 (デフォルトでもありますが)
-                
+                const response = await fetch(urlWithCacheBuster, { cache: 'no-cache', mode: 'cors' });
                 if (!response.ok) {
                     let errorText = `データ読み込み失敗 (サーバー応答: ${response.status} ${response.statusText})`;
                     try { 
@@ -84,10 +76,8 @@
                     } catch (e) { /* JSONパース失敗時は追加情報なし */ }
                     throw new Error(errorText);
                 }
-
                 const data = await response.json();
                 loadingMessage.style.display = 'none';
-
                 if (Array.isArray(data) && data.length > 0) {
                     data.forEach(item => {
                         const tr = document.createElement('tr');
